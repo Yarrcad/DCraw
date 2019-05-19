@@ -15,6 +15,8 @@ public class PlayerController : MonoBehaviour
     public GameObject gameOverScreen;
 
     private Vector2 touchOrigin = - Vector2.one;
+    private int horizontal;
+    private int vertical;
 
     void Start()
     {
@@ -27,28 +29,36 @@ public class PlayerController : MonoBehaviour
     #if UNITY_EDITOR || UNITY_STANDALONE || UNITYWEBPLAYER
         Vector2 moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         moveVelocity = moveInput.normalized * speed;
-#else
-        Vector2 moveInput;
-        if (Input.touchCount > 0)
-        {
-            Touch myTouch = Input.touches[0];
 
-            if (myTouch.phase == TouchPhase.Began)
+#elif UNITY_IOS || UNITY_ANDROID || UNITY_WP8 || UNITY_IPHONE
+            
+            if (Input.touchCount > 0)
             {
-                touchOrigin = myTouch.position;
+                Touch myTouch = Input.touches[0];
+                
+                if (myTouch.phase == TouchPhase.Began)
+                {
+                    touchOrigin = myTouch.position;
+                }
+                else if (myTouch.phase == TouchPhase.Ended && touchOrigin.x >= 0)
+                {
+                    Vector2 touchEnd = myTouch.position;
+                    float x = touchEnd.x - touchOrigin.x;
+                    float y = touchEnd.y - touchOrigin.y;
+                    
+                    touchOrigin.x = -1;
+                    
+                    if (Mathf.Abs(x) > Mathf.Abs(y))
+                        horizontal = x > 0 ? 1 : -1;
+                    else
+                        vertical = y > 0 ? 1 : -1;
+                }
             }
-            else if (myTouch.phase == TouchPhase.Ended && touchOrigin.x >= 0)
-            {
-                Vector2 touchEnd = myTouch.position;
-                float x = touchEnd.x - touchOrigin.x;
-                float y = touchEnd.y - touchOrigin.y;
-                touchOrigin.x = -1;
-                if (Mathf.Abs(x) > Mathf.Abs(y))
-                    Vector2 moveInput = new Vector2(x > 0 ? 1 : -1, y > 0 ? 1 : -1);
-                    moveVelocity = moveInput.normalized * speed;
-            }
-        }
 #endif
+        if (horizontal != 0 || vertical != 0)
+        {
+            moveVelocity = new Vector2(horizontal, vertical).normalized * speed;
+        }
     }
 
     private void FixedUpdate()
